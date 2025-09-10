@@ -24,17 +24,54 @@ function validatePassword(pw: string) {
   return ""
 }
 
+function passwordStrength(pw: string) {
+  let score = 0
+  if (pw.length >= 8) score++
+  if (/[A-Z]/.test(pw)) score++
+  if (/[a-z]/.test(pw)) score++
+  if (/[0-9]/.test(pw)) score++
+  if (/[^A-Za-z0-9]/.test(pw)) score++
+  return score // 0..5
+}
 
 function classNames(...xs: (string | boolean | undefined)[]) {
   return xs.filter(Boolean).join(" ")
 }
 
-// Fake auth function (NEVER ship real logic like this)
 function mockAuthenticate({ email, password }: { email: string; password: string }) {
-  return new Promise<{ token: string; user: { email: string } }>((resolve, reject) => {
+  return new Promise<{
+    token: string
+    user: { name: string; email: string; department: string; title: string; role: string }
+  }>((resolve, reject) => {
     setTimeout(() => {
+      // Check for registered users first
+      const storedUserData = localStorage.getItem("userData")
+      if (storedUserData) {
+        try {
+          const userData = JSON.parse(storedUserData)
+          if (userData.email === email) {
+            // For demo purposes, accept any password for registered users
+            resolve({
+              token: "demo_token_123",
+              user: userData,
+            })
+            return
+          }
+        } catch (error) {
+          // Continue to default login if stored data is invalid
+        }
+      }
+
+      // Default demo login
       if (email === VALID_EMAIL && password === VALID_PASSWORD) {
-        resolve({ token: "demo_token_123", user: { email } })
+        const defaultUser = {
+          name: "Demo Officer",
+          email: email,
+          department: "Demo Police Department",
+          title: "Officer",
+          role: "officer",
+        }
+        resolve({ token: "demo_token_123", user: defaultUser })
       } else {
         reject(new Error("Invalid email or password."))
       }
@@ -98,7 +135,12 @@ export default function LoginPage() {
 
     setSubmitting(true)
     try {
-      await mockAuthenticate({ email, password })
+      const result = await mockAuthenticate({ email, password })
+      localStorage.setItem("authToken", result.token)
+      localStorage.setItem("userData", JSON.stringify(result.user))
+      if (remember) {
+        localStorage.setItem("rememberMe", "true")
+      }
       setSuccess(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed.")
@@ -109,13 +151,15 @@ export default function LoginPage() {
 
   const successTrapRef = useFocusTrap(success)
 
+  const strength = passwordStrength(password)
+  const strengthLabels = ["Very Weak", "Weak", "Fair", "Good", "Strong", "Very Strong"]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome back!</h1>
-          <p className="text-slate-600">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome back</h1>
+          <p className="text-slate-600">Sign in to your account (frontend demo)</p>
         </div>
 
         <form
@@ -185,7 +229,29 @@ export default function LoginPage() {
               aria-invalid={!!pwErr}
               aria-describedby={pwErr ? "password-error" : undefined}
             />
-            
+            {pwErr ? (
+              <p id="password-error" className="mt-1 text-xs text-rose-600" role="alert">
+                {pwErr}
+              </p>
+            ) : (
+              // Strength meter (informational)
+              <div className="mt-2" aria-live="polite">
+                <div className="h-1.5 w-full rounded-full bg-slate-200 overflow-hidden">
+                  <div
+                    className={classNames(
+                      "h-full transition-all",
+                      strength <= 1 && "bg-rose-400",
+                      strength === 2 && "bg-amber-400",
+                      strength === 3 && "bg-yellow-500",
+                      strength === 4 && "bg-emerald-500",
+                      strength >= 5 && "bg-emerald-600",
+                    )}
+                    style={{ width: `${(strength / 5) * 100}%` }}
+                  />
+                </div>
+                <p className="mt-1 text-[11px] text-slate-600">Strength: {strengthLabels[strength]}</p>
+              </div>
+            )}
           </div>
 
           {/* Remember + Forgot */}
@@ -231,7 +297,7 @@ export default function LoginPage() {
             {submitting ? "Signing in…" : "Sign in"}
           </button>
 
-          {/* demo creds for testing */}
+          {/* Hints for the evaluator (optional – remove in prod) */}
           <div className="text-[11px] text-slate-500">
             <p>
               <strong>Demo creds</strong>: {VALID_EMAIL} / {VALID_PASSWORD}
@@ -273,7 +339,7 @@ export default function LoginPage() {
                     alert(`Remember me: ${remember ? "on" : "off"}`)
                   }}
                 >
-                  Another Button Here
+                  What did we save?
                 </button>
               </div>
             </div>

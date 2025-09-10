@@ -7,11 +7,16 @@ export default function HomePage() {
         <div className="text-center mb-12">
           <div className="mb-6">
             <div className="mb-4 flex justify-center">
-              <img src="/images/logo.png" alt="AuthFlow Logo" className="w-16 h-16 object-contain" />
+              <img src="/images/logo.png" alt="TDG Logo" className="w-16 h-16 object-contain" />
             </div>
-
+            {/* Alternative: Keep the geometric icon as fallback */}
+            {/* <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+            </div> */}
             <h1 className="text-4xl font-bold text-slate-900 mb-2">Tactical Data Group</h1>
-            <p className="text-slate-600 text-lg">Secure authentication made simple</p>
+            <p className="text-slate-600 text-lg">blah blah blah blah</p>
           </div>
         </div>
 
@@ -46,6 +51,7 @@ export default function HomePage() {
             Sign Up
           </Link>
 
+          
         </div>
 
         <div className="text-center mt-8 text-slate-500 text-sm">
