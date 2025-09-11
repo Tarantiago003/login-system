@@ -7,7 +7,7 @@ export default function HomePage() {
         <div className="text-center mb-12">
           <div className="mb-6">
             <div className="mb-4 flex justify-center">
-              <img src="/images/logo.png" alt="TDG Logo" className="w-16 h-16 object-contain" />
+              <img src="/images/logo.jpg" alt="AuthFlow Logo" className="w-16 h-16 object-contain" />
             </div>
             {/* Alternative: Keep the geometric icon as fallback */}
             {/* <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -15,8 +15,8 @@ export default function HomePage() {
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
               </svg>
             </div> */}
-            <h1 className="text-4xl font-bold text-slate-900 mb-2">Tactical Data Group</h1>
-            <p className="text-slate-600 text-lg">blah blah blah blah</p>
+            <h1 className="text-4xl font-bold text-slate-900 mb-2">AuthFlow</h1>
+            <p className="text-slate-600 text-lg">Secure authentication made simple</p>
           </div>
         </div>
 
@@ -51,11 +51,24 @@ export default function HomePage() {
             Sign Up
           </Link>
 
-          
+          <Link
+            href="/logout"
+            className="w-full text-slate-600 rounded-xl px-6 py-3 font-medium hover:bg-slate-50 transition text-center block text-sm flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
+            </svg>
+            Sign Out
+          </Link>
         </div>
 
         <div className="text-center mt-8 text-slate-500 text-sm">
-          <p>© 2025 TacticalDataGroup.com</p>
+          <p>© 2024 AuthFlow. Secure by design.</p>
         </div>
       </div>
     </div>
