@@ -1,34 +1,51 @@
+// app/api/auth/login/route.ts
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+import { pool } from "../../../lib/db"; // adjust path if needed
 
 export async function POST(req: Request) {
-  const { email, password } = await req.json();
+  try {
+    const { email, password } = await req.json();
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    if (!email || !password) {
+      return NextResponse.json({ error: "Email and password required" }, { status: 400 });
+    }
+
+    // ✅ Look up user from DB
+    const result = await pool.query("SELECT * FROM officers WHERE email = $1", [email]);
+    if (result.rows.length === 0) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
+
+    const user = result.rows[0];
+
+    // ✅ Compare hashed password
+    const validPw = await bcrypt.compare(password, user.password_hash);
+    if (!validPw) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    }
+
+    // ✅ Create JWT
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET!,
+      { expiresIn: "1h" }
+    );
+
+    // ✅ Set cookie so middleware can read it
+    const response = NextResponse.json({ message: "Login successful" });
+    response.cookies.set("token", token, {
+      httpOnly: true,                     // server-only, safer
+      secure: process.env.NODE_ENV === "production", // only HTTPS in prod
+      sameSite: "strict",
+      path: "/",
+      maxAge: 60 * 60, // 1 hour
+    });
+
+    return response;
+  } catch (err) {
+    console.error("Login error:", err);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
-
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-  }
-
-  // Generate token
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-    expiresIn: "1h",
-  });
-
-  // Set cookie
-  const response = NextResponse.json({ message: "Login successful" });
-  response.cookies.set("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60,
-  });
-
-  return response;
 }

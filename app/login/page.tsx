@@ -7,7 +7,7 @@ function classNames(...xs: (string | boolean | undefined)[]) {
   return xs.filter(Boolean).join(" ");
 }
 
-// Focus trap helper for modal-like success card (same as your UI)
+// Focus trap helper for modal-like success card
 function useFocusTrap(active: boolean) {
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -37,7 +37,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
-  const [remember, setRemember] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -59,8 +58,14 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        localStorage.setItem("token", data.token); // Save JWT
+        // ✅ Save token in cookies (middleware reads this)
+        document.cookie = `token=${data.token}; path=/; max-age=3600; SameSite=Strict`;
+
+        // ✅ Option A: show success modal first
         setSuccess(true);
+
+        // ✅ Option B: auto-redirect immediately
+        // window.location.href = "/dashboard";
       } else {
         setError(data.error || "Login failed.");
       }
