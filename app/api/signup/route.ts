@@ -1,33 +1,40 @@
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcrypt";
+import NextAuth from "next-auth"
+import CredentialsProvider from "next-auth/providers/credentials"
+import { PrismaAdapter } from "@auth/prisma-adapter"
+import { PrismaClient } from "@prisma/client"
+import bcrypt from "bcrypt"
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { name, email, password } = body;
-
-    if (!email || !password || !name) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-    }
-
-    // hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // save user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
+export const authOptions = {
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" },
       },
-    });
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null
 
-    return NextResponse.json({ user });
-  } catch (error: any) {
-    console.error(error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
-  }
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email },
+        })
+
+        if (!user) return null
+
+        const isValid = await bcrypt.compare(credentials.password, user.password!)
+        if (!isValid) return null
+
+        return user
+      },
+    }),
+  ],
+  session: {
+    strategy: "database",
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 }
+
+export default NextAuth(authOptions)
