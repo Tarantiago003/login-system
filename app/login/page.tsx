@@ -7,12 +7,19 @@ function classNames(...xs: (string | boolean | undefined)[]) {
   return xs.filter(Boolean).join(" ");
 }
 
-// Focus trap helper for modal-like success card
+// Focus trap helper for modal
 function useFocusTrap(active: boolean) {
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!active || !containerRef.current) return;
-    const selectors = ["button", "a[href]", "input", "select", "textarea", '[tabindex]:not([tabindex="-1"])'];
+    const selectors = [
+      "button",
+      "a[href]",
+      "input",
+      "select",
+      "textarea",
+      '[tabindex]:not([tabindex="-1"])',
+    ];
     const nodes = containerRef.current.querySelectorAll(selectors.join(","));
     const first = nodes[0] as HTMLElement;
     const last = nodes[nodes.length - 1] as HTMLElement;
@@ -28,7 +35,8 @@ function useFocusTrap(active: boolean) {
     }
     containerRef.current.addEventListener("keydown", handleKeyDown);
     first?.focus();
-    return () => containerRef.current?.removeEventListener("keydown", handleKeyDown);
+    return () =>
+      containerRef.current?.removeEventListener("keydown", handleKeyDown);
   }, [active]);
   return containerRef;
 }
@@ -58,14 +66,13 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // ✅ Save token in cookies (middleware reads this)
-        document.cookie = `token=${data.token}; path=/; max-age=3600; SameSite=Strict`;
-
-        // ✅ Option A: show success modal first
+        localStorage.setItem("token", data.token); // Save JWT
         setSuccess(true);
 
-        // ✅ Option B: auto-redirect immediately
-        // window.location.href = "/dashboard";
+        // Redirect after 1.5s
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 1500);
       } else {
         setError(data.error || "Login failed.");
       }
@@ -80,7 +87,9 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome back!</h1>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            Welcome back!
+          </h1>
           <p className="text-slate-600">Sign in to your account</p>
         </div>
 
@@ -90,7 +99,10 @@ export default function LoginPage() {
         >
           {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-slate-700"
+            >
               Email
             </label>
             <input
@@ -107,7 +119,10 @@ export default function LoginPage() {
           {/* Password */}
           <div>
             <div className="flex items-center justify-between">
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-slate-700"
+              >
                 Password
               </label>
               <button
@@ -158,14 +173,12 @@ export default function LoginPage() {
               ref={successTrapRef}
               className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border border-slate-100"
             >
-              <h2 className="text-xl font-semibold text-slate-900 mb-2">You're in 🎉</h2>
-              <p className="text-sm text-slate-600 mb-4">Redirecting to dashboard…</p>
-              <button
-                className="rounded-xl bg-slate-900 text-white px-4 py-2 text-sm hover:bg-slate-800"
-                onClick={() => (window.location.href = "/dashboard")}
-              >
-                Go to Dashboard
-              </button>
+              <h2 className="text-xl font-semibold text-slate-900 mb-2">
+                You're in 🎉
+              </h2>
+              <p className="text-sm text-slate-600 mb-4">
+                Redirecting to dashboard…
+              </p>
             </div>
           </div>
         )}

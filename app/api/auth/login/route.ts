@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { pool } from "../../../lib/db"; // adjust path if needed
+import  pool  from "@/lib/db"; // adjust path if needed
 
 export async function POST(req: Request) {
   try {

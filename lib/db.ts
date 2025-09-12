@@ -1,6 +1,11 @@
 // lib/db.ts
-import { Pool } from "pg";
+import pkg from "pg";
 
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // e.g. postgres://user:pass@localhost:5432/mydb
+const { Pool } = pkg;
+
+// Reuse the connection pool (important for Next.js hot reloads)
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL, // must be set in .env.local
 });
+
+export default pool;
