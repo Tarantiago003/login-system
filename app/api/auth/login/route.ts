@@ -1,51 +1,48 @@
-// app/api/auth/login/route.ts
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import  pool  from "@/lib/db"; // adjust path if needed
+import jwt from "jsonwebtoken";
+import pool from "@/lib/db"; // make sure this points to your db.ts
 
 export async function POST(req: Request) {
   try {
     const { email, password } = await req.json();
 
-    if (!email || !password) {
-      return NextResponse.json({ error: "Email and password required" }, { status: 400 });
-    }
+    // 1. Look up user
+    const result = await pool.query(
+      "SELECT * FROM officers WHERE email = $1 LIMIT 1",
+      [email]
+    );
 
-    // ✅ Look up user from DB
-    const result = await pool.query("SELECT * FROM officers WHERE email = $1", [email]);
     if (result.rows.length === 0) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
     const user = result.rows[0];
 
-    // ✅ Compare hashed password
-    const validPw = await bcrypt.compare(password, user.password_hash);
-    if (!validPw) {
+    // 2. Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    // ✅ Create JWT
+    // 3. Generate JWT
     const token = jwt.sign(
       { id: user.id, email: user.email },
-      process.env.JWT_SECRET!,
+      process.env.JWT_SECRET as string,
       { expiresIn: "1h" }
     );
 
-    // ✅ Set cookie so middleware can read it
-    const response = NextResponse.json({ message: "Login successful" });
-    response.cookies.set("token", token, {
-      httpOnly: true,                     // server-only, safer
-      secure: process.env.NODE_ENV === "production", // only HTTPS in prod
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 60, // 1 hour
+    // 4. Return correct format
+    return NextResponse.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      },
     });
-
-    return response;
-  } catch (err) {
-    console.error("Login error:", err);
+  } catch (error) {
+    console.error("Login error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

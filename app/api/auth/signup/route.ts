@@ -1,42 +1,37 @@
+// app/api/auth/signup/route.ts
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { PrismaClient } from "@prisma/client";
-
-
-const prisma = new PrismaClient();
+import pool from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const body = await req.json();
+    const name = (body.name || "").trim();
+    const email = (body.email || "").trim().toLowerCase();
+    const password = body.password || "";
 
     if (!name || !email || !password) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-    }
-
-    // Check if email already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return NextResponse.json({ error: "Email already in use" }, { status: 400 });
+      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashed = await bcrypt.hash(password, 10);
 
-    // Insert new user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
-    });
+    // Insert into officers table
+    const q = `
+      INSERT INTO officers (name, email, password)
+      VALUES ($1, $2, $3)
+      RETURNING id, name, email
+    `;
+    const result = await pool.query(q, [name, email, hashed]);
 
-    return NextResponse.json({ user }, { status: 201 });
-  } catch (error: any) {
-    console.error(error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    return NextResponse.json({ message: "User created", user: result.rows[0] }, { status: 201 });
+  } catch (err: any) {
+    console.error("Signup error:", err);
+    // Unique violation code for Postgres
+    if (err?.code === "23505") {
+      return NextResponse.json({ error: "Email already in use" }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
