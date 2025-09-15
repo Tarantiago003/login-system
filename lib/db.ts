@@ -1,11 +1,11 @@
 // lib/db.ts
-import pkg from "pg";
+import { Pool } from "pg";
 
-const { Pool } = pkg;
-
-// Reuse the connection pool (important for Next.js hot reloads)
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // must be set in .env.local
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false, // 👈 allow self-signed cert
+  },
 });
 
 export default pool;
