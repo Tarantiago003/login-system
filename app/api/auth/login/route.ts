@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import pool from "@/lib/db"; // make sure this points to your db.ts
+import pool from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
@@ -27,20 +27,34 @@ export async function POST(req: Request) {
 
     // 3. Generate JWT
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user.email, role: user.role || 'officer' },
       process.env.JWT_SECRET as string,
-      { expiresIn: "1h" }
+      { expiresIn: "24h" }
     );
 
-    // 4. Return correct format
-    return NextResponse.json({
-      token,
+    // 4. Create response with user data
+    const response = NextResponse.json({
+      success: true,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
+        role: user.role || 'officer',
+        department: user.department,
+        title: user.title,
+        badgeId: user.badge_id
       },
     });
+
+    // 5. Set HTTP-only cookie for security
+    response.cookies.set("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 // 24 hours
+    });
+
+    return response;
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
