@@ -9,9 +9,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
 
     try {
       const res = await fetch("/api/auth/login", {
@@ -20,71 +19,58 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        setError(data.error || "Login failed");
-        return;
+        throw new Error("Login failed");
       }
 
-      // ✅ Save token + user data
+      const data = await res.json();
+
+      // ✅ Save to localStorage
       localStorage.setItem("authToken", data.token);
-      localStorage.setItem(
-        "userData",
-        JSON.stringify({ name: data.user.name, email: data.user.email })
-      );
+      localStorage.setItem("userData", JSON.stringify(data.user));
 
       // ✅ Redirect to dashboard
       router.push("/dashboard");
-    } catch (err) {
-      console.error("Login error:", err);
-      setError("Something went wrong. Try again.");
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-slate-900 mb-6 text-center">
-          Sign in
-        </h2>
+    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <form
+        onSubmit={handleLogin}
+        className="bg-white p-6 rounded-lg shadow-md w-96"
+      >
+        <h1 className="text-2xl font-bold mb-4 text-center">Welcome back!</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-slate-300 px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
-            required
-          />
+        {error && <p className="text-red-500 mb-3">{error}</p>}
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-slate-300 px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
-            required
-          />
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full mb-3 px-3 py-2 border rounded"
+          required
+        />
 
-          {error && <p className="text-red-600 text-sm">{error}</p>}
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full mb-3 px-3 py-2 border rounded"
+          required
+        />
 
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-slate-900 text-white py-2 hover:bg-slate-800 transition"
-          >
-            Sign In
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-slate-600 mt-4">
-          Don’t have an account?{" "}
-          <a href="/signup" className="text-slate-900 font-medium hover:underline">
-            Sign up
-          </a>
-        </p>
-      </div>
+        <button
+          type="submit"
+          className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+        >
+          Sign In
+        </button>
+      </form>
     </div>
   );
 }
